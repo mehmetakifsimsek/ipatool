@@ -10,6 +10,7 @@ func searchCmd() *cobra.Command {
 	var (
 		limit         int64
 		platformValue string
+		countryValue  string
 	)
 
 	cmd := &cobra.Command{
@@ -28,10 +29,11 @@ func searchCmd() *cobra.Command {
 			}
 
 			output, err := dependencies.AppStore.Search(appstore.SearchInput{
-				Account:  infoResult.Account,
-				Term:     args[0],
-				Limit:    limit,
-				Platform: platform,
+				Account:     infoResult.Account,
+				Term:        args[0],
+				Limit:       limit,
+				Platform:    platform,
+				CountryCode: countryValue,
 			})
 			if err != nil {
 				return err
@@ -48,6 +50,7 @@ func searchCmd() *cobra.Command {
 
 	cmd.Flags().Int64VarP(&limit, "limit", "l", 5, "maximum amount of search results to retrieve")
 	cmd.Flags().StringVar(&platformValue, "platform", "", "Platform to search: iphone, ipad, or appletv")
+	cmd.Flags().StringVarP(&countryValue, "country", "c", "", "Storefront country code to search (e.g. us, tr, nl)")
 
 	return cmd
 }

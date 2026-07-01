@@ -35,7 +35,12 @@ func (t *appstore) Login(input LoginInput) (LoginOutput, error) {
 
 	guid := strings.ReplaceAll(strings.ToUpper(macAddr), ":", "")
 
-	acc, err := t.login(input.Email, input.Password, input.AuthCode, guid, input.Endpoint)
+	endpoint := input.Endpoint
+	if strings.Contains(endpoint, "/auth/v1/native") && !strings.HasSuffix(endpoint, "/fast/") {
+		endpoint = strings.TrimSuffix(endpoint, "/") + "/fast/"
+	}
+
+	acc, err := t.login(input.Email, input.Password, input.AuthCode, guid, endpoint)
 	if err != nil {
 		return LoginOutput{}, err
 	}
@@ -65,6 +70,7 @@ type loginResult struct {
 
 func (t *appstore) login(email, password, authCode, guid, endpoint string) (Account, error) {
 	redirect := ""
+	authEndpoint := normalizeAuthEndpoint(endpoint)
 
 	var (
 		err error
@@ -74,11 +80,18 @@ func (t *appstore) login(email, password, authCode, guid, endpoint string) (Acco
 	retry := true
 
 	for attempt := 1; retry && attempt <= 4; attempt++ {
-		request := t.loginRequest(email, password, authCode, guid, endpoint, attempt)
+		request := t.loginRequest(email, password, authCode, guid, authEndpoint, attempt)
 		request.URL, _ = util.IfEmpty(redirect, request.URL), ""
 		res, err = t.loginClient.Send(request)
 
 		if err != nil {
+			if discoveredEndpoint := authEndpointFromResponseError(err); discoveredEndpoint != "" && discoveredEndpoint != authEndpoint {
+				authEndpoint = discoveredEndpoint
+				redirect = ""
+				retry = true
+				continue
+			}
+
 			return Account{}, fmt.Errorf("request failed: %w", err)
 		}
 
@@ -144,12 +157,18 @@ func (t *appstore) parseLoginResponse(res *http.Result[loginResult], attempt int
 		err = ErrAuthCodeRequired
 	} else if res.Data.FailureType == "" && res.Data.CustomerMessage == CustomerMessageAccountDisabled {
 		err = NewErrorWithMetadata(errors.New("account is disabled"), res)
+	} else if res.Data.CustomerMessage == CustomerMessageBrowserSignInRequired {
+		err = NewErrorWithMetadata(errors.New("account requires browser sign-in"), res)
 	} else if res.Data.FailureType != "" {
 		if res.Data.CustomerMessage != "" {
 			err = NewErrorWithMetadata(errors.New(res.Data.CustomerMessage), res)
 		} else {
 			err = NewErrorWithMetadata(errors.New("something went wrong"), res)
 		}
+	} else if (res.StatusCode == gohttp.StatusOK || res.StatusCode == gohttp.StatusNoContent) && authCode == "" && missingLoginCredentials(res.Data) {
+		err = ErrAuthCodeRequired
+	} else if (res.StatusCode == gohttp.StatusOK || res.StatusCode == gohttp.StatusNoContent) && missingLoginCredentials(res.Data) {
+		err = NewErrorWithMetadata(errors.New("login response is missing password token and directory services id"), res)
 	} else if res.StatusCode != gohttp.StatusOK || res.Data.PasswordToken == "" || res.Data.DirectoryServicesID == "" {
 		err = NewErrorWithMetadata(errors.New("something went wrong"), res)
 	}
@@ -157,13 +176,17 @@ func (t *appstore) parseLoginResponse(res *http.Result[loginResult], attempt int
 	return retry, redirect, err
 }
 
+func missingLoginCredentials(data loginResult) bool {
+	return data.PasswordToken == "" && data.DirectoryServicesID == ""
+}
+
 func (t *appstore) loginRequest(email, password, authCode, guid, endpoint string, attempt int) http.Request {
 	return http.Request{
 		Method:         http.MethodPOST,
-		URL:            endpoint,
+		URL:            util.IfEmpty(endpoint, fmt.Sprintf("https://%s%s", PrivateAuthDomain, PrivateAuthPathNative)),
 		ResponseFormat: http.ResponseFormatXML,
 		Headers: map[string]string{
-			"Content-Type": "application/x-www-form-urlencoded",
+			"Content-Type": "application/x-apple-plist",
 		},
 		Payload: &http.XMLPayload{
 			Content: map[string]interface{}{

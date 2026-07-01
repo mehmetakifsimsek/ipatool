@@ -33,12 +33,13 @@ func (t *appstore) Bag(input BagInput) (BagOutput, error) {
 	}
 
 	return BagOutput{
-		AuthEndpoint: res.Data.URLBag.AuthEndpoint,
+		AuthEndpoint: normalizeAuthEndpoint(res.Data.AuthEndpoint, res.Data.URLBag.AuthEndpoint),
 	}, nil
 }
 
 type bagResult struct {
-	URLBag urlBag `plist:"urlBag,omitempty"`
+	URLBag       urlBag `plist:"urlBag,omitempty"`
+	AuthEndpoint string `plist:"authenticateAccount,omitempty"`
 }
 
 type urlBag struct {
@@ -47,7 +48,7 @@ type urlBag struct {
 
 func (*appstore) bagRequest(guid string) http.Request {
 	return http.Request{
-		URL:            fmt.Sprintf("https://%s%s?guid=%s", PrivateInitDomain, PrivateInitPath, guid),
+		URL:            fmt.Sprintf("https://%s%s?ix=6&guid=%s", PrivateInitDomain, PrivateInitPath, guid),
 		Method:         http.MethodGET,
 		ResponseFormat: http.ResponseFormatXML,
 		Headers: map[string]string{

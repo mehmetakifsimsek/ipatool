@@ -11,10 +11,11 @@ import (
 )
 
 type SearchInput struct {
-	Account  Account
-	Term     string
-	Limit    int64
-	Platform Platform
+	Account     Account
+	Term        string
+	Limit       int64
+	Platform    Platform
+	CountryCode string
 }
 
 type SearchOutput struct {
@@ -23,9 +24,18 @@ type SearchOutput struct {
 }
 
 func (t *appstore) Search(input SearchInput) (SearchOutput, error) {
-	countryCode, err := countryCodeFromStoreFront(input.Account.StoreFront)
-	if err != nil {
-		return SearchOutput{}, fmt.Errorf("country code is invalid: %w", err)
+	var (
+		countryCode string
+		err         error
+	)
+
+	if input.CountryCode != "" {
+		countryCode = input.CountryCode
+	} else {
+		countryCode, err = countryCodeFromStoreFront(input.Account.StoreFront)
+		if err != nil {
+			return SearchOutput{}, fmt.Errorf("country code is invalid: %w", err)
+		}
 	}
 
 	request, err := t.searchRequest(input.Term, countryCode, input.Limit, input.Platform)

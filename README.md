@@ -1,21 +1,37 @@
-# IPATool
+# IPATool (Custom Patched Version v2.3.1)
 
-[![Release](https://img.shields.io/github/release/majd/ipatool.svg?label=Release)](https://GitHub.com/majd/ipatool/releases/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/majd/ipatool/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/release/mehmetakifsimsek/ipatool.svg?label=Release)](https://github.com/mehmetakifsimsek/ipatool/releases/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mehmetakifsimsek/ipatool/blob/main/LICENSE)
 
 `ipatool` is a command line tool that allows you to search for iOS apps on the [App Store](https://apps.apple.com) and download a copy of the app package, known as an _ipa_ file.
 
-![Demo](./resources/demo.gif)
+This is a custom patched version of `ipatool` containing critical fixes and new features.
 
+- [Added Features & Enhancements](#added-features--enhancements)
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [Manual](#manual)
-  - [Package Manager (macOS)](#package-manager-macos)
 - [Usage](#usage)
 - [Compiling](#compiling)
 - [License](#license)
-- [Releases](https://github.com/majd/ipatool/releases)
-- [FAQ](https://github.com/majd/ipatool/wiki/FAQ)
+- [Releases](https://github.com/mehmetakifsimsek/ipatool/releases)
+
+---
+
+## Added Features & Enhancements
+
+This custom version includes the following updates:
+
+1. **`--country` (`-c`) Flag on Search:**
+   You can specify a storefront country code (e.g. `us`, `tr`, `nl`) when searching for apps, allowing you to find apps available in specific regions outside your account's primary region.
+   
+2. **Storefront & Country Detection:**
+   The `auth info` command now automatically resolves and prints the 6-digit storefront ID and the mapped 2-letter country code of your Apple ID account.
+
+3. **Friendly Connection Error Handling:**
+   Instead of displaying cryptic plist parsing errors (e.g. `unexpected hex digit 'h'`) when Apple returns an HTML error page (due to rate-limits or temporary blocks), the tool now logs a clear, human-readable error.
+
+---
 
 ## Requirements
 
@@ -26,15 +42,9 @@
 
 ### Manual
 
-You can grab the latest version of `ipatool` from [GitHub releases](https://github.com/majd/ipatool/releases).
+You can grab the latest custom version of `ipatool` from [GitHub releases](https://github.com/mehmetakifsimsek/ipatool/releases).
 
-### Package Manager (macOS)
-
-You can install `ipatool` using [Homebrew](https://brew.sh).
-
-```shell
-$ brew install ipatool
-```
+---
 
 ## Usage
 
@@ -47,7 +57,7 @@ Usage:
   ipatool auth [command]
 
 Available Commands:
-  info        Show current account info
+  info        Show current account info (including storefront ID and country code)
   login       Login to the App Store
   revoke      Revoke your App Store credentials
 
@@ -71,6 +81,7 @@ Usage:
   ipatool search <term> [flags]
 
 Flags:
+  -c, --country string    Storefront country code to search (e.g. us, tr, nl)
   -h, --help              help for search
   -l, --limit int         maximum amount of search results to retrieve (default 5)
       --platform string   Platform to search: iphone, ipad, or appletv
@@ -178,10 +189,11 @@ $ go build -o ipatool
 Unit tests can be executed with the following commands.
 
 ```shell
-$ go generate github.com/majd/ipatool/...
-$ go test -v github.com/majd/ipatool/...
+$ go generate github.com/mehmetakifsimsek/ipatool/v2/...
+$ go test -v github.com/mehmetakifsimsek/ipatool/v2/...
 ```
 
 ## License
 
-IPATool is released under the [MIT license](https://github.com/majd/ipatool/blob/main/LICENSE).
+IPATool is released under the [MIT license](https://github.com/mehmetakifsimsek/ipatool/blob/main/LICENSE).
+

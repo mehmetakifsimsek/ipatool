@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/majd/ipatool/v2/pkg/util"
 	"howett.net/plist"
 )
 
@@ -95,20 +94,23 @@ type packageInfo struct {
 }
 
 func (*appstore) replicateSinfFromManifest(manifest packageManifest, zip *zip.Writer, sinfs []Sinf, bundleName string) error {
-	zipped, err := util.Zip(sinfs, manifest.SinfPaths)
-	if err != nil {
-		return fmt.Errorf("failed to zip sinfs: %w", err)
+	if len(sinfs) == 0 {
+		return errors.New("failed to replicate sinfs: no sinf data provided by App Store")
+	}
+	if len(manifest.SinfPaths) == 0 {
+		return nil
 	}
 
-	for _, pair := range zipped {
-		sp := fmt.Sprintf("Payload/%s.app/%s", bundleName, pair.Second)
+	for i, path := range manifest.SinfPaths {
+		sinf := sinfs[i % len(sinfs)]
+		sp := fmt.Sprintf("Payload/%s.app/%s", bundleName, path)
 
 		file, err := zip.Create(sp)
 		if err != nil {
 			return fmt.Errorf("failed to create file: %w", err)
 		}
 
-		_, err = file.Write(pair.First.Data)
+		_, err = file.Write(sinf.Data)
 		if err != nil {
 			return fmt.Errorf("failed to write data: %w", err)
 		}

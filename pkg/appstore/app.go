@@ -5,11 +5,12 @@ import (
 )
 
 type App struct {
-	ID       int64   `json:"trackId,omitempty"`
-	BundleID string  `json:"bundleId,omitempty"`
-	Name     string  `json:"trackName,omitempty"`
-	Version  string  `json:"version,omitempty"`
-	Price    float64 `json:"price,omitempty"`
+	ID         int64   `json:"trackId,omitempty"`
+	BundleID   string  `json:"bundleId,omitempty"`
+	Name       string  `json:"trackName,omitempty"`
+	Version    string  `json:"version,omitempty"`
+	Price      float64 `json:"price,omitempty"`
+	ArtworkURL string  `json:"artworkUrl100,omitempty"`
 }
 
 type VersionHistoryInfo struct {
@@ -39,5 +40,6 @@ func (a App) MarshalZerologObject(event *zerolog.Event) {
 		Str("bundleID", a.BundleID).
 		Str("name", a.Name).
 		Str("version", a.Version).
-		Float64("price", a.Price)
+		Float64("price", a.Price).
+		Str("artworkURL", a.ArtworkURL)
 }

@@ -229,7 +229,17 @@ func (t *appstore) downloadFile(src, dst string, progress *progressbar.ProgressB
 
 		_, err = io.Copy(io.MultiWriter(file, progress), res.Body)
 	} else {
-		_, err = io.Copy(file, res.Body)
+		_, err = file.Seek(0, io.SeekEnd)
+		if err != nil {
+			return fmt.Errorf("can not seek file: %w", err)
+		}
+
+		pw := &progressWriter{
+			total:   res.ContentLength + stat.Size(),
+			written: stat.Size(),
+		}
+
+		_, err = io.Copy(io.MultiWriter(file, pw), res.Body)
 	}
 
 	if err != nil {
@@ -239,11 +249,31 @@ func (t *appstore) downloadFile(src, dst string, progress *progressbar.ProgressB
 	return nil
 }
 
+type progressWriter struct {
+	total      int64
+	written    int64
+	lastReport int
+}
+
+func (pw *progressWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	pw.written += int64(n)
+	if pw.total > 0 {
+		percent := int((float64(pw.written) / float64(pw.total)) * 100)
+		if percent > pw.lastReport && percent <= 100 {
+			pw.lastReport = percent
+			fmt.Printf("{\"type\": \"progress\", \"percentage\": %d}\n", percent)
+		}
+	}
+	return n, nil
+}
+
 func (*appstore) downloadRequest(acc Account, app App, guid string, externalVersionID string) http.Request {
 	payload := map[string]interface{}{
 		"creditDisplay": "",
 		"guid":          guid,
 		"salableAdamId": app.ID,
+		"serialNumber":  "0",
 	}
 
 	if externalVersionID != "" {

@@ -10,7 +10,7 @@ import (
 	"github.com/thediveo/enumflag/v2"
 )
 
-var version = "dev"
+var version = "2.3.0"
 
 type contextKey string
 
