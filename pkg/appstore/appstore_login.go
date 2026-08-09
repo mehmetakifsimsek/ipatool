@@ -105,6 +105,11 @@ func (t *appstore) login(email, password, authCode, guid, endpoint string) (Acco
 				return t.login(email, password, authCode, guid, legacyAuthenticateEndpoint)
 			}
 
+			var responseErr *http.UnexpectedResponseError
+			if errors.As(err, &responseErr) && authCode == "" {
+				return Account{}, ErrAuthCodeRequired
+			}
+
 			return Account{}, fmt.Errorf("request failed: %w", err)
 		}
 
