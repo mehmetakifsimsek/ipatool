@@ -65,6 +65,13 @@ func getVersionMetadataCmd() *cobra.Command {
 					app = lookupResult.App
 				}
 
+				if errors.Is(lastErr, appstore.ErrLicenseRequired) {
+					err := dependencies.AppStore.Purchase(appstore.PurchaseInput{Account: acc, App: app})
+					if err != nil && !errors.Is(err, appstore.ErrLicenseAlreadyExists) {
+						return err
+					}
+				}
+
 				out, err := dependencies.AppStore.GetVersionMetadata(appstore.GetVersionMetadataInput{
 					Account:   acc,
 					App:       app,
@@ -90,7 +97,7 @@ func getVersionMetadataCmd() *cobra.Command {
 				retry.RetryIf(func(err error) bool {
 					lastErr = err
 
-					return errors.Is(err, appstore.ErrPasswordTokenExpired)
+					return errors.Is(err, appstore.ErrPasswordTokenExpired) || errors.Is(err, appstore.ErrLicenseRequired)
 				}),
 			)
 		},

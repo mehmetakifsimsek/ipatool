@@ -214,11 +214,7 @@ func missingLoginCredentials(data loginResult) bool {
 func (t *appstore) loginRequest(email, password, authCode, guid, endpoint string, attempt int) http.Request {
 	return http.Request{
 		Method:         http.MethodPOST,
-<<<<<<< HEAD
-		URL:            util.IfEmpty(endpoint, fmt.Sprintf("https://%s%s", PrivateAuthDomain, PrivateAuthPathNative)),
-=======
-		URL:            authenticateURL(endpoint),
->>>>>>> v2.3.2
+		URL:            util.IfEmpty(authenticateURL(endpoint), fmt.Sprintf("https://%s%s", PrivateAuthDomain, PrivateAuthPathNative)),
 		ResponseFormat: http.ResponseFormatXML,
 		Headers: map[string]string{
 			"Content-Type": "application/x-apple-plist",
